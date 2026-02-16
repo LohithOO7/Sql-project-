@@ -1,124 +1,138 @@
--- Create the database
+-- SQL Script for Student Management System
+
+-- Creating database
 CREATE DATABASE StudentManagementSystem;
 USE StudentManagementSystem;
 
--- Create the Students table
+-- Creating tables
+
+-- Students table
 CREATE TABLE Students (
     StudentID INT PRIMARY KEY AUTO_INCREMENT,
     FirstName VARCHAR(50) NOT NULL,
     LastName VARCHAR(50) NOT NULL,
-    DateOfBirth DATE NOT NULL,
-    Gender ENUM('Male', 'Female', 'Other'),
-    Email VARCHAR(100) UNIQUE NOT NULL,
-    PhoneNumber VARCHAR(15),
-    EnrollmentDate DATE NOT NULL DEFAULT CURRENT_DATE
+    DateOfBirth DATE,
+    EnrollmentDate DATE NOT NULL,
+    Major VARCHAR(50)
 );
 
--- Create the Courses table
+-- Courses table
 CREATE TABLE Courses (
     CourseID INT PRIMARY KEY AUTO_INCREMENT,
     CourseName VARCHAR(100) NOT NULL,
-    CourseDescription TEXT,
     Credits INT NOT NULL
 );
 
--- Create the Enrollments table
+-- Enrollments table
 CREATE TABLE Enrollments (
     EnrollmentID INT PRIMARY KEY AUTO_INCREMENT,
     StudentID INT,
     CourseID INT,
-    EnrollmentDate DATE NOT NULL DEFAULT CURRENT_DATE,
-    Grade VARCHAR(2),
+    EnrollmentDate DATE,
     FOREIGN KEY (StudentID) REFERENCES Students(StudentID),
     FOREIGN KEY (CourseID) REFERENCES Courses(CourseID)
 );
 
--- Create the Instructors table
-CREATE TABLE Instructors (
-    InstructorID INT PRIMARY KEY AUTO_INCREMENT,
-    FirstName VARCHAR(50) NOT NULL,
-    LastName VARCHAR(50) NOT NULL,
-    Email VARCHAR(100) UNIQUE NOT NULL,
-    HireDate DATE NOT NULL
-);
+-- Creating sample data
 
--- Create the CourseInstructors table
-CREATE TABLE CourseInstructors (
-    CourseInstructorID INT PRIMARY KEY AUTO_INCREMENT,
-    CourseID INT,
-    InstructorID INT,
-    FOREIGN KEY (CourseID) REFERENCES Courses(CourseID),
-    FOREIGN KEY (InstructorID) REFERENCES Instructors(InstructorID)
-);
+-- Inserting sample students
+INSERT INTO Students (FirstName, LastName, DateOfBirth, EnrollmentDate, Major) VALUES
+('John', 'Doe', '2000-01-15', '2022-09-01', 'Computer Science'),
+('Jane', 'Smith', '1999-05-23', '2021-09-01', 'Mathematics'),
+('Emily', 'Johnson', '2001-09-30', '2022-09-01', 'Biology'),
+('Michael', 'Brown', '1998-11-12', '2020-09-01', 'History');
 
--- Insert sample data into Students table
-INSERT INTO Students (FirstName, LastName, DateOfBirth, Gender, Email, PhoneNumber, EnrollmentDate) VALUES
-('John', 'Doe', '2000-01-01', 'Male', 'john.doe@example.com', '1234567890', '2021-09-01'),
-('Jane', 'Doe', '2001-02-02', 'Female', 'jane.doe@example.com', '0987654321', '2021-09-01'),
-('Sam', 'Smith', '2000-03-03', 'Male', 'sam.smith@example.com', '1231231234', '2021-09-01'),
-('Emily', 'Jones', '2002-04-04', 'Female', 'emily.jones@example.com', '4321432143', '2021-09-01'),
-('Michael', 'Brown', '2001-05-05', 'Male', 'michael.brown@example.com', '5678567856', '2021-09-01');
+-- Inserting sample courses
+INSERT INTO Courses (CourseName, Credits) VALUES
+('Intro to Programming', 3),
+('Data Structures', 4),
+('Calculus', 3),
+('World History', 3);
 
--- Insert sample data into Courses table
-INSERT INTO Courses (CourseName, CourseDescription, Credits) VALUES
-('Mathematics', 'Introduction to Mathematics', 3),
-('Physics', 'Fundamentals of Physics', 4),
-('Chemistry', 'Basics of Chemistry', 4),
-('Biology', 'Fundamentals of Biology', 3),
-('Computer Science', 'Introduction to Computer Science', 4);
+-- Enrolling students in courses
+INSERT INTO Enrollments (StudentID, CourseID, EnrollmentDate) VALUES
+(1, 1, '2022-09-01'),
+(1, 2, '2022-09-01'),
+(2, 2, '2021-09-01'),
+(2, 3, '2021-09-01'),
+(3, 1, '2022-09-01'),
+(4, 4, '2020-09-01');
 
--- Insert sample data into Instructors table
-INSERT INTO Instructors (FirstName, LastName, Email, HireDate) VALUES
-('Dr. Alice', 'Johnson', 'alice.johnson@example.com', '2019-01-15'),
-('Dr. Bob', 'Williams', 'bob.williams@example.com', '2018-03-22'),
-('Prof. Charlie', 'Davis', 'charlie.davis@example.com', '2020-06-30');
+-- Sample queries
 
--- Insert sample data into CourseInstructors table
-INSERT INTO CourseInstructors (CourseID, InstructorID) VALUES
-(1, 1),
-(2, 2),
-(3, 3),
-(4, 1),
-(5, 2);
-
--- Insert sample data into Enrollments table
-INSERT INTO Enrollments (StudentID, CourseID, Grade) VALUES
-(1, 1, 'A'),
-(1, 2, 'B'),
-(2, 1, 'A'),
-(3, 3, 'C'),
-(4, 4, 'B'),
-(5, 5, 'A');
-
--- Query to get all students along with their enrollments
-SELECT s.FirstName, s.LastName, c.CourseName, e.Grade
+-- 1. Retrieve all students enrolled in a specific course
+SELECT s.FirstName, s.LastName
 FROM Students s
 JOIN Enrollments e ON s.StudentID = e.StudentID
+WHERE e.CourseID = 1;
+
+-- 2. Count how many students are enrolled in each major
+SELECT Major, COUNT(*) AS NumberOfStudents
+FROM Students
+GROUP BY Major;
+
+-- 3. Get the average age of enrolled students
+SELECT AVG(YEAR(CURDATE()) - YEAR(DateOfBirth)) AS AverageAge
+FROM Students;
+
+-- 4. List all courses with the number of students enrolled
+SELECT c.CourseName, COUNT(e.StudentID) AS EnrollmentCount
+FROM Courses c
+LEFT JOIN Enrollments e ON c.CourseID = e.CourseID
+GROUP BY c.CourseID;
+
+-- 5. Find students who are not enrolled in any course
+SELECT s.FirstName, s.LastName
+FROM Students s
+LEFT JOIN Enrollments e ON s.StudentID = e.StudentID
+WHERE e.StudentID IS NULL;
+
+-- 6. Get details of all enrollments
+dSELECT s.FirstName, s.LastName, c.CourseName, e.EnrollmentDate
+FROM Enrollments e
+JOIN Students s ON e.StudentID = s.StudentID
 JOIN Courses c ON e.CourseID = c.CourseID;
 
--- Query to get all courses and their instructors
-SELECT c.CourseName, CONCAT(i.FirstName, ' ', i.LastName) AS InstructorName
-FROM Courses c
-JOIN CourseInstructors ci ON c.CourseID = ci.CourseID
-JOIN Instructors i ON ci.InstructorID = i.InstructorID;
+-- 7. List all students with their major and enrollment status
+SELECT s.FirstName, s.LastName, s.Major,
+       CASE WHEN e.EnrollmentID IS NOT NULL THEN 'Enrolled' ELSE 'Not Enrolled' END AS EnrollmentStatus
+FROM Students s
+LEFT JOIN Enrollments e ON s.StudentID = e.StudentID;
 
--- Query to get the average grade for each course
-SELECT c.CourseName, AVG(CASE WHEN e.Grade IS NOT NULL THEN CHAR_LENGTH(e.Grade) ELSE 0 END) AS AverageGrade
-FROM Courses c
-LEFT JOIN Enrollments e ON c.CourseID = e.CourseID
-GROUP BY c.CourseID;
+-- 8. Update a student's major
+UPDATE Students
+SET Major = 'Mathematics'
+WHERE StudentID = 1;
 
--- Query to list students who have not enrolled in any course
-SELECT * FROM Students WHERE StudentID NOT IN (SELECT DISTINCT StudentID FROM Enrollments);
+-- 9. Delete a student
+DELETE FROM Students
+WHERE StudentID = 4;
 
--- Query to get the number of students enrolled in each course
-SELECT c.CourseName, COUNT(e.StudentID) AS NumberOfStudents
-FROM Courses c
-LEFT JOIN Enrollments e ON c.CourseID = e.CourseID
-GROUP BY c.CourseID;
+-- 10. Get list of all courses with their credits
+SELECT CourseName, Credits FROM Courses;
 
--- Query to list all instructors along with the courses they teach
-SELECT CONCAT(i.FirstName, ' ', i.LastName) AS InstructorName, c.CourseName
-FROM Instructors i
-JOIN CourseInstructors ci ON i.InstructorID = ci.InstructorID
-JOIN Courses c ON ci.CourseID = c.CourseID;
+-- 11. Find all students born after a certain date
+SELECT FirstName, LastName
+FROM Students
+WHERE DateOfBirth > '2000-01-01';
+
+-- 12. Display all enrollments sorted by enrollment date
+SELECT s.FirstName, s.LastName, c.CourseName, e.EnrollmentDate
+FROM Enrollments e
+JOIN Students s ON e.StudentID = s.StudentID
+JOIN Courses c ON e.CourseID = c.CourseID
+ORDER BY e.EnrollmentDate;
+
+-- 13. Get total number of courses
+SELECT COUNT(*) AS TotalCourses FROM Courses;
+
+-- 14. Check enrollments per student
+SELECT s.FirstName, s.LastName, COUNT(e.CourseID) AS CoursesEnrolled
+FROM Students s
+LEFT JOIN Enrollments e ON s.StudentID = e.StudentID
+GROUP BY s.StudentID;
+
+-- 15. Rename a course
+UPDATE Courses
+SET CourseName = 'Advanced Programming'
+WHERE CourseID = 1;
